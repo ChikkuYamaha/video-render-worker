@@ -6,18 +6,21 @@ on:
 jobs:
   process-media:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 265
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Environment
         run: sudo apt-get update && sudo apt-get install -y ffmpeg wget
 
       - name: Fetch Media Asset
-        run: wget -O input.mp4 "PASTE_YOUR_RELEASE_LINK_HERE"
+        run: wget -O input.mp4 "https://github.com/ChikkuYamaha/video-render-worker/releases/download/v1.0.0/video_20261123_193857.mp4"
 
       - name: Execute Output Stream
         env:
           STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
         run: |
-          ffmpeg -re -stream_loop -1 -i input.mp4 -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
-          
+          DURATION=$((14400 + RANDOM % 901))
+          timeout $DURATION ffmpeg -re -stream_loop -1 -i input.mp4 -stream_loop -1 -i music.mp3 -filter_complex "[0:a]volume=1.0[v_aud];[1:a]volume=0.22[bgm_aud];[v_aud][bgm_aud]amix=inputs=2:duration=first:dropout_transition=2[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY" || true
