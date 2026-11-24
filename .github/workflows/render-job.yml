@@ -1,0 +1,23 @@
+name: Video Render Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  process-media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - name: Setup Environment
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg wget
+
+      - name: Fetch Media Asset
+        run: wget -O input.mp4 "PASTE_YOUR_RELEASE_LINK_HERE"
+
+      - name: Execute Output Stream
+        env:
+          STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+        run: |
+          ffmpeg -re -stream_loop -1 -i input.mp4 -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+          
